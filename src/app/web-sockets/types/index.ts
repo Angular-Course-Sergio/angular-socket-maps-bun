@@ -26,7 +26,7 @@ export type ServerMessage =
   |
   {
     type: 'WELCOME',
-    payload: { clientId: string; }
+    payload: Client;
   }
   |
   {

@@ -11,7 +11,7 @@ import { WebSocketService } from '../../../web-sockets/services/websocket.servic
 })
 export class MapPage {
 
-  private wsService = inject(WebSocketService);
+  public wsService = inject(WebSocketService);
 
   public currentCenter = signal<LatLng>({ lat: 0, lng: 0 });
 

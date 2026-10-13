@@ -1,9 +1,9 @@
 import { effect, Injectable, signal } from '@angular/core';
 import { ClientMessage, ServerMessage } from '../types';
 import { Subject } from 'rxjs';
-import Cookie from 'js-cookie';
+import Cookies from 'js-cookie';
 
-import { LatLng } from '../../types';
+import { Client, LatLng } from '../../types';
 
 type ConnectionStatus = 'offline' | 'connected' | 'disconnected' | 'connecting';
 
@@ -11,12 +11,16 @@ type ConnectionStatus = 'offline' | 'connected' | 'disconnected' | 'connecting';
   providedIn: 'root',
 })
 export class WebSocketService {
+  public client = signal<Client | null>(null);
+
   private socket: WebSocket | null = null;
   public connectionStatus = signal<ConnectionStatus>('offline');
   public onMessage = new Subject<ServerMessage>();
 
   constructor() {
-    // this.connectWebSocket();
+    if (Cookies.get('name') && Cookies.get('color') && Cookies.get('coords')) {
+      this.connectWebSocket();
+    }
   }
 
   private reconnectInterval: number | null = null;
@@ -39,9 +43,9 @@ export class WebSocketService {
   public login(name: string, color: string, latLng: LatLng) {
     if (this.connectionStatus() === 'connecting' || this.connectionStatus() === 'connected') return;
 
-    Cookie.set('name', name);
-    Cookie.set('color', color);
-    Cookie.set('coords', JSON.stringify(latLng));
+    Cookies.set('name', name);
+    Cookies.set('color', color);
+    Cookies.set('coords', JSON.stringify(latLng));
 
     this.connectWebSocket();
   }
@@ -66,6 +70,11 @@ export class WebSocketService {
 
     this.socket.addEventListener('message', (event) => {
       const data: ServerMessage = JSON.parse(event.data);
+
+      if (data.type === 'WELCOME') {
+        this.client.set(data.payload);
+      }
+
       this.onMessage.next(data);
     });
   }
