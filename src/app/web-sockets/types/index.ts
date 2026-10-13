@@ -9,7 +9,7 @@ export type ClientMessage =
   |
   {
     type: 'CLIENT_MOVE',
-    payload: { coords: LatLng; }
+    payload: { clientId: string, coords: LatLng; }
   }
   |
   {

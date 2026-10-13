@@ -3,6 +3,8 @@ import mapboxgl from 'mapbox-gl';
 import type { Client, LatLng } from '../../../types';
 import { WebSocketService } from '../../../web-sockets/services/websocket.service';
 
+import Cookies from 'js-cookie';
+
 @Component({
   selector: 'custom-map',
   imports: [],
@@ -25,10 +27,21 @@ export class CustomMap implements OnInit {
 
   private onMessage$ = this.wsService.onMessage.subscribe(message => {
     switch (message.type) {
-      case 'WELCOME': {
+      case 'WELCOME':
         this.createMarkers([message.payload], true);
         break;
-      }
+      case 'CLIENT_JOIN':
+        this.createMarkers([message.payload]);
+        break;
+      case 'CLIENT_STATE':
+        this.createMarkers(message.payload);
+        break;
+      case 'CLIENT_MOVED':
+        this.updateMarkerCoords(message.payload.clientId, message.payload.coords);
+        break;
+      case 'CLIENT_LEFT':
+        this.removeMarker(message.payload.clientId);
+        break;
     }
   });
 
@@ -61,10 +74,43 @@ export class CustomMap implements OnInit {
       })
         .setLngLat({ lng: client.coords.lng, lat: client.coords.lat })
         .setPopup(this.createPopup(client))
+        .on('dragend', () => {
+          Cookies.set('coords', JSON.stringify(marker.getLngLat()));
+        })
+        .on('drag', () => {
+          const coords = marker.getLngLat();
+          this.wsService.sendMessage({
+            type: 'CLIENT_MOVE',
+            payload: {
+              clientId: client.clientId,
+              coords: { lng: coords.lng, lat: coords.lat }
+            },
+          });
+        })
         .addTo(this.map!);
 
       this.markers.set(client.clientId, marker)
     }
+  }
+
+  private updateMarkerCoords(clientId: string, latLng: LatLng) {
+    if (!this.map) return;
+
+    const marker = this.markers.get(clientId);
+    if (!marker) return;
+
+    marker.setLngLat(latLng);
+  }
+
+  private removeMarker(clientId: string) {
+    if (!this.map) return;
+
+    const marker = this.markers.get(clientId);
+    if (!marker) return;
+
+    marker.remove();
+
+    this.markers.delete(clientId);
   }
 
   private createPopup(client: Client): mapboxgl.Popup {
