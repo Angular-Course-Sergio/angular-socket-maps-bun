@@ -7,4 +7,10 @@ import { CustomMap } from '../../components/custom-map/custom-map';
   imports: [ConnectForm, CustomMap],
   templateUrl: './map-page.html',
 })
-export class MapPage { }
+export class MapPage {
+
+  connectForm(formData: { name: string; color: string; }) {
+    console.log({ formData })
+  }
+
+}

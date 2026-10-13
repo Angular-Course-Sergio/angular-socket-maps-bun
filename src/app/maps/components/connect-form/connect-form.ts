@@ -1,8 +1,34 @@
-import { Component } from '@angular/core';
+import { Component, output, signal } from '@angular/core';
+import { form, FormField, required } from '@angular/forms/signals';
+
+interface ConnectFormData {
+  name: string;
+  color: string;
+}
 
 @Component({
   selector: 'connect-form',
-  imports: [],
+  imports: [FormField],
   templateUrl: './connect-form.html',
+  styleUrl: './connect-form.css'
 })
-export class ConnectForm { }
+export class ConnectForm {
+
+  public formSubmitted = output<ConnectFormData>();
+
+  public connectFormModel = signal<ConnectFormData>({
+    name: '',
+    color: '#000000'
+  })
+
+  public connectForm = form(this.connectFormModel, (fieldPath) => {
+    required(fieldPath.name, { message: 'Name is required' });
+    required(fieldPath.color, { message: 'Color is required' });
+  });
+
+  onSubmit(event: Event) {
+    event.preventDefault();
+    this.formSubmitted.emit(this.connectFormModel());
+  }
+
+}
